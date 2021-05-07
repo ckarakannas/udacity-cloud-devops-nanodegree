@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "UdacityProject2"
+  },
+  {
+    "ParameterKey": "Ec2InstanceType",
+    "ParameterValue": "t3.medium"
+  },
+  {
+    "ParameterKey": "Ec2AMI",
+    "ParameterValue": "ami-09a56048b08f94cdf"
+  },
+  {
+    "ParameterKey": "AutoScaleMinInstances",
+    "ParameterValue": "4"
+  },
+  {
+    "ParameterKey": "AutoScaleMaxInstances",
+    "ParameterValue": "6"
+  }
+]

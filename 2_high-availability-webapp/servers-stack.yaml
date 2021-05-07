@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  High Availability Web App Project - CloudFormation Servers stack
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+  Ec2InstanceType:
+    Description: EC2 instances type
+    Type: String
+    Default: t2.micro
+  Ec2AMI:
+    Description: EC2 Image (Defaults to Ubuntu Server 18.04 LTS)
+    Type: AWS::EC2::Image::Id
+    Default: ami-09a56048b08f94cdf
+  AutoScaleMinInstances:
+    Description: Minimum number of instances for the autoscaling group
+    Type: String
+    Default: "1"
+  AutoScaleMaxInstances:
+    Description: Maximum number of instances for the autoscaling group
+    Type: String
+    Default: "1"
+Resources:
+  ## Security Groups
+  WebAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: InstancesSecurityGroup
+      GroupDescription: Rules to allow ingress and egress traffic from web app instances
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-WebAppSecurityGroup"
+  LBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: LoadBalancerSecurityGroup
+      GroupDescription: Rules to allow ingress and egress traffic from load balancer(s)
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-LoadBalancerSecurityGroup"
+  ## Launch configuration and autoscaling
+  WebAppLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      LaunchConfigurationName: WebAppLaunchConfiguration
+      IamInstanceProfile: !Ref S3IamInstanceProfile
+      ImageId: !Ref Ec2AMI
+      InstanceType: !Ref Ec2InstanceType
+      SecurityGroups:
+        - Ref: WebAppSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdf"
+          Ebs:
+            VolumeSize: 10
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt update -y
+          apt upgrade -y
+          apt install unzip -y
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          aws s3 cp s3://udacity-demo-1/udacity.zip .
+          unzip -o udacity.zip
+          echo "Udacity Demo Web Server Up and Running!" > index.html
+          echo "It works! Udagram, Udacity" > test.html
+  WebAppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchConfigurationName: !Ref WebAppLaunchConfiguration
+      MaxSize: !Ref AutoScaleMaxInstances
+      MinSize: !Ref AutoScaleMinInstances
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-AutoScalingGroup"
+          PropagateAtLaunch: false
+      TargetGroupARNs:
+        - Ref: WebAppInstancesTargetGroup
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub ${EnvironmentName}-Private-NETS
+  ## Load Balancer resources
+  WebAppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - Ref: LBSecurityGroup
+      Subnets:
+        - Fn::ImportValue: !Sub ${EnvironmentName}-PublicSubnet-1
+        - Fn::ImportValue: !Sub ${EnvironmentName}-PublicSubnet-2
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-LoadBalancer"
+  WebAppInstancesTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: /
+      HealthCheckPort: "80"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 4
+      TargetGroupAttributes:
+        - Key: slow_start.duration_seconds
+          Value: "300"
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-TargetGroup"
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppInstancesTargetGroup
+      LoadBalancerArn: !Ref WebAppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+  LoadBalancerListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppInstancesTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values: [/]
+      ListenerArn: !Ref LoadBalancerListener
+      Priority: 1
+  ## S3 IAM role resources
+  S3IamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref S3ReadOnlyEC2Role
+  S3ReadOnlyEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-S3Iam-Role
+Outputs:
+  LoadBalancerUrl:
+    Description: Load Balancer DNS Url
+    Value: !Sub
+      - http://${LB_DNS}
+      - { LB_DNS: !GetAtt WebAppLoadBalancer.DNSName }
+    Export:
+      Name: !Sub ${EnvironmentName}-LB-URL
