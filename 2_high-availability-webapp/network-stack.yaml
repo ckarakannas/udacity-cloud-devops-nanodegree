@@ -44,7 +44,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1CIDR
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet AZ1
+          Value: !Sub ${EnvironmentName}-Public-Subnet-AZ1
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -53,7 +53,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet2CIDR
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet AZ2
+          Value: !Sub ${EnvironmentName}-Public-Subnet-AZ2
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -62,7 +62,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnet1CIDR
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet AZ1
+          Value: !Sub ${EnvironmentName}-Private-Subnet-AZ1
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -71,14 +71,14 @@ Resources:
       CidrBlock: !Ref PrivateSubnet2CIDR
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet AZ2
+          Value: !Sub ${EnvironmentName}-Private-Subnet-AZ2
   ## Gateways
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} IGW
+          Value: !Sub ${EnvironmentName}-InternetGateway
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -91,7 +91,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} NatGateway AZ1
+          Value: !Sub ${EnvironmentName}-NatGateway-AZ1
   EIP1:
     Type: AWS::EC2::EIP
     DependsOn: AttachGateway
@@ -99,7 +99,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} NatGatewayEIP AZ1
+          Value: !Sub ${EnvironmentName}-NatGatewayEIP-AZ1
   NatGateway2:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -107,7 +107,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} NatGateway AZ2
+          Value: !Sub ${EnvironmentName}-NatGateway-AZ2
   EIP2:
     Type: AWS::EC2::EIP
     DependsOn: AttachGateway
@@ -115,7 +115,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} NatGatewayEIP AZ2
+          Value: !Sub ${EnvironmentName}-NatGatewayEIP-AZ2
   ## Routes
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -123,7 +123,7 @@ Resources:
       VpcId: !Ref UdacityVPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} PublicRouteTable
+          Value: !Sub ${EnvironmentName}-PublicRouteTable
   PublicRoute:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -147,7 +147,7 @@ Resources:
       VpcId: !Ref UdacityVPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} PrivateRouteTable AZ1
+          Value: !Sub ${EnvironmentName}-PrivateRouteTable-AZ1
   PrivateRoute1:
     Type: AWS::EC2::Route
     Properties:
@@ -165,7 +165,7 @@ Resources:
       VpcId: !Ref UdacityVPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} PrivateRouteTable AZ2
+          Value: !Sub ${EnvironmentName}-PrivateRouteTable-AZ2
   PrivateRoute2:
     Type: AWS::EC2::Route
     Properties:
