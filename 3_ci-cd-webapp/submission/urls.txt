@@ -1,0 +1,10 @@
+# [URL01]
+https://github.com/ckarakannas/cdond-c3-projectstarter
+# [URL02]
+http://udapeople-116ebdd8-1497-4d47-b33b-2aec6f6315f1.s3-website.eu-west-2.amazonaws.com/
+# [URL03]
+http://dxqrsas6fmbwv.cloudfront.net
+# [URL04]
+http://ec2-3-8-215-208.eu-west-2.compute.amazonaws.com
+# [URL05]
+http://ec2-35-178-3-167.eu-west-2.compute.amazonaws.com

@@ -1,3 +1,6 @@
 [submodule "3_ci-cd-webapp/project-code"]
 	path = 3_ci-cd-webapp/project-code
 	url = git@github.com:ckarakannas/cdond-c3-projectstarter.git
+[submodule "4_ML-microservice-api/DevOps_Microservices"]
+	path = 4_ML-microservice-api/DevOps_Microservices
+	url = git@github.com:ckarakannas/DevOps_Microservices.git
