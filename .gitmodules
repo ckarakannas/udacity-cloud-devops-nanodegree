@@ -4,6 +4,3 @@
 [submodule "4_ML-microservice-api/DevOps_Microservices"]
 	path = 4_ML-microservice-api/DevOps_Microservices
 	url = git@github.com:ckarakannas/DevOps_Microservices.git
-[submodule "5_capstone-project/cloud-devops-capstone-project"]
-	path = 5_capstone-project/cloud-devops-capstone-project
-	url = git@github.com:ckarakannas/cloud-devops-capstone-project.git
